@@ -1,0 +1,28 @@
+services:
+  - type: worker
+    name: channel-publisher-bot
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: false
+    disk:
+      name: channel-publisher-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: OWNER_IDS
+        sync: false
+      - key: ADMIN_IDS
+        value: ""
+      - key: DATABASE_PATH
+        value: /app/data/bot.db
+      - key: POLL_TIMEOUT
+        value: "50"
+      - key: SEND_DELAY_SECONDS
+        value: "0.10"
+      - key: DELETE_CHECK_INTERVAL
+        value: "10"
+      - key: LOG_LEVEL
+        value: INFO
