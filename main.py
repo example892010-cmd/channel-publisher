@@ -6,11 +6,31 @@ import asyncio
 import logging
 import os
 import signal
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from dotenv import load_dotenv
 
 from bot.app import ChannelPublisherBot
 from bot.config import Settings
+
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Simple HTTP handler to satisfy Render's port detection requirement."""
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running!")
+        
+    def log_message(self, format, *args):
+        # Suppress logging of health check pings to keep logs clean
+        return
+
+
+def run_web_server() -> None:
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
 
 
 def configure_logging() -> None:
@@ -25,6 +45,11 @@ def configure_logging() -> None:
 async def main() -> None:
     load_dotenv()
     configure_logging()
+
+    # Start the dummy web server in a background thread so Render detects an open port
+    web_thread = threading.Thread(target=run_web_server, daemon=True)
+    web_thread.start()
+
     settings = Settings.from_env()
     app = ChannelPublisherBot(settings)
     loop = asyncio.get_running_loop()
